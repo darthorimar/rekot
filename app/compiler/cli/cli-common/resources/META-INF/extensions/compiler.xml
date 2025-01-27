@@ -1,0 +1,17 @@
+<idea-plugin>
+    <id>org.jetbrains.kotlin</id>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="org.jetbrains.kotlin.irGenerationExtension"
+                        interface="org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension"
+                        area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint qualifiedName="org.jetbrains.kotlin.simpleNameReferenceExtension"
+                        interface="org.jetbrains.kotlin.plugin.references.SimpleNameReferenceExtension"
+                        area="IDEA_PROJECT" dynamic="true"/>
+        <extensionPoint qualifiedName="org.jetbrains.kotlin.fir.extensions.firExtensionRegistrar"
+                        interface="org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrarAdapter"
+                        area="IDEA_PROJECT"/>
+        <extensionPoint qualifiedName="org.jetbrains.kotlin.defaultErrorMessages"
+                        interface="org.jetbrains.kotlin.diagnostics.rendering.DefaultErrorMessages.Extension"/>
+    </extensionPoints>
+</idea-plugin>

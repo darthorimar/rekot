@@ -1,0 +1,1 @@
+allprojects { repositories { mavenCentral() } }

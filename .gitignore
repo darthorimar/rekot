@@ -1,0 +1,12 @@
+.gradle
+build
+!gradle/wrapper/gradle-wrapper.jar
+
+.idea
+.kotlin
+tmp
+
+
+app/proguard
+
+.DS_Store
