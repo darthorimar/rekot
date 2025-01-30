@@ -25,8 +25,8 @@ class ScreenControllerLanternaImpl(private val terminal: Terminal, private val s
     }
 
     override val cursor: Cursor
-        get() = Cursor(terminal.cursorPosition.row, terminal.cursorPosition.column)
+        get() = Cursor(screen.cursorPosition.row, screen.cursorPosition.column)
 
     override val screenSize: ScreenSize
-        get() = ScreenSize(terminal.terminalSize.rows, terminal.terminalSize.columns)
+        get() = ScreenSize(screen.terminalSize.rows, screen.terminalSize.columns)
 }
