@@ -4,6 +4,7 @@ import me.darthorimar.rekot.cells.Cells
 import me.darthorimar.rekot.completion.CompletionPopupRenderer
 import me.darthorimar.rekot.editor.Editor
 import me.darthorimar.rekot.editor.renderer.CellViewRenderer
+import me.darthorimar.rekot.events.Event
 import me.darthorimar.rekot.events.EventQueue
 import me.darthorimar.rekot.help.HelpRenderer
 import me.darthorimar.rekot.logging.error
@@ -38,6 +39,7 @@ class App : KoinComponent {
     }
 
     private fun doRun() {
+        queue.fire(Event.AppStarted)
         editor.navigateToCell(cells.newCell())
 
         while (appState.active) {

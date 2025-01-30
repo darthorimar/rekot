@@ -5,6 +5,7 @@ import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
 
 class AppConfig(
+    val appDir: Path,
     val logsDir: Path,
     val tmpDir: Path,
     val stdlibPath: Path,

@@ -1,19 +1,20 @@
 package me.darthorimar.rekot.mocks
 
-import me.darthorimar.rekot.config.APP_NAME
-import me.darthorimar.rekot.config.AppConfig
-import me.darthorimar.rekot.config.ColorSpace
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.createDirectories
 import kotlin.io.path.div
+import me.darthorimar.rekot.config.APP_NAME
+import me.darthorimar.rekot.config.AppConfig
+import me.darthorimar.rekot.config.ColorSpace
 
 object TestConfigFactory {
     fun createTestConfig(): AppConfig {
         val appDir = Files.createTempDirectory("${APP_NAME}_test")
         return AppConfig(
-            logsDir = (appDir / "logs").createDirectories(),
+                appDir = appDir,
+                logsDir = (appDir / "logs").createDirectories(),
                 tmpDir = (appDir / "tmp").createDirectories(),
                 stdlibPath = getStdlibPath(),
                 javaHome = Paths.get(System.getProperty("java.home")),

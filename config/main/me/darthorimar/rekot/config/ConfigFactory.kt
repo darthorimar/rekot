@@ -1,8 +1,5 @@
 package me.darthorimar.rekot.config
 
-import me.darthorimar.rekot.config.args.ArgsConfig
-import me.darthorimar.rekot.config.args.ArgsConfigParser
-import me.darthorimar.rekot.config.persistent.PersistentConfigFactory
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -10,15 +7,11 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.div
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
+import me.darthorimar.rekot.config.persistent.PersistentConfigFactory
 
 object ConfigFactory {
-    fun createConfig(args: Array<String>): AppConfig {
-        val rawConfig = ArgsConfigParser.parse(args)
-        return createConfig(rawConfig)
-    }
-
-    private fun createConfig(argsConfig: ArgsConfig): AppConfig {
-        val appDir = (argsConfig.appDir?.let(Paths::get) ?: getDefaultAppDirectory()).createDirectories()
+    fun createConfig(): AppConfig {
+        val appDir = getDefaultAppDirectory().createDirectories()
         val persistentConfig = PersistentConfigFactory.readOrCreateDefault(appDir)
         val javaHome =
             (persistentConfig.javaHome?.let(Paths::get) ?: getJavaHome()).also { home ->
@@ -43,6 +36,7 @@ object ConfigFactory {
         val tmpDir = Files.createTempDirectory(APP_NAME_LOWERCASE)
         val tabSize = persistentConfig.tabSize
         return AppConfig(
+            appDir = appDir,
             logsDir = logsDir,
             tmpDir = tmpDir,
             stdlibPath = stdlibPath,
@@ -56,7 +50,7 @@ object ConfigFactory {
         return Paths.get(path)
     }
 
-    private fun getDefaultAppDirectory(): Path {
+    fun getDefaultAppDirectory(): Path {
         val osName = System.getProperty("os.name").lowercase()
 
         return when {

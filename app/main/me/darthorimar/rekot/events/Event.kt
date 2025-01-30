@@ -49,6 +49,8 @@ sealed interface Event {
         }
     }
 
+    data object AppStarted: Event
+
     data class AfterCharTyping(val cellId: CellId, val char: Char) : Event
 
     data object CloseApp : Event
