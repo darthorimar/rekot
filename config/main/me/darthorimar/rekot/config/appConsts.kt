@@ -1,6 +1,6 @@
 package me.darthorimar.rekot.config
 
-const val APP_VERSION = "0.1"
+const val APP_VERSION = "0.1.1"
 const val APP_GITHUB_REPO = "darthorimar/rekot"
 const val APP_NAME = "ReKot"
 const val APP_NAME_LOWERCASE = "rekot"
