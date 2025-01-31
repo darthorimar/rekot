@@ -42,6 +42,12 @@ With results that can be reused between the cells
 ### In-editor Code Highlighting
 <img src="images/errors.png" alt="In-editor code highlighting" >
 
+
+## 🧪 Compatibility
+* Tested on _macOS Sequoia 15.2_ on _iTerm2_ and _Terminal.app_
+* Not tested on _Linux_ or _Windows_
+
+
 ## 🛠️ Building ReKot
 TODO
 
