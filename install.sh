@@ -132,7 +132,7 @@ if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
   echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >>"$SHELL_PROFILE"
   echo "Run the following command or restart your terminal for the changes to take effect:"
   echo "source $SHELL_PROFILE"
-  ehco ""
+  echo ""
 fi
 
 echo "Installation complete! You can now run the application with '$RUN_SCRIPT_NAME'."
