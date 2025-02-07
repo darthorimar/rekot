@@ -49,7 +49,7 @@ With results that can be reused between the cells
 
 ## ⚠️ Known Problems
 
-On macOS Sonoma, some text may be printed on the terminal like:
+On macOS Sequoia, some text may be printed on the terminal like:
 ```
 2025-01-28 23:39:24.855 java[2091:30776] +[IMKClient subclass]: chose IMKClient_Modern
 2025-01-28 23:39:24.855 java[2091:30776] +[IMKInputSession subclass]: chose IMKInputSession_Modern
