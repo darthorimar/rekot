@@ -21,16 +21,16 @@ interface CellExecuting : AppTest {
         var event: Event?
         while (true) {
             Thread.sleep(10)
-            event = queue.pollAndProcessSingle() ?: continue
+            event = queue.processFirstNonBlocking() ?: continue
             if (event is Event.CellExecutionStateChanged) {
                 when (val state = event.state) {
                     is CellExecutionState.Error -> {
-                        queue.pollAndProcessAll()
+                        queue.processAllNonBlocking()
                         return state
                     }
 
                     is CellExecutionState.Executed -> {
-                        queue.pollAndProcessAll()
+                        queue.processAllNonBlocking()
                         return state
                     }
 

@@ -42,12 +42,12 @@ class App : KoinComponent {
         queue.fire(Event.AppStarted)
         editor.navigateToCell(cells.newCell())
 
+        keyboardInputPoller.startPolling()
+
+        val appState = appState
         while (appState.active) {
-            keyboardInputPoller.pollAndFire()
-            val needRender = queue.pollAndProcessAll()
-            if (needRender) {
-                render()
-            }
+            queue.processAllBlocking()
+            render()
         }
     }
 

@@ -4,18 +4,31 @@ import com.googlecode.lanterna.input.KeyStroke
 import com.googlecode.lanterna.input.KeyType
 import com.googlecode.lanterna.screen.Screen
 import me.darthorimar.rekot.app.AppComponent
+import me.darthorimar.rekot.app.AppState
 import me.darthorimar.rekot.events.Event
 import org.koin.core.component.inject
+import kotlin.concurrent.thread
 
 class KeyboardInputPoller(private val screen: Screen) : AppComponent {
     private val hackyMacBugFix: HackyMacBugFix by inject()
 
-    fun pollAndFire() {
-        pollKeyboard()?.let { fireEvent(it) }
+    private val appState: AppState by inject()
+
+    fun startPolling() {
+        thread(isDaemon = true, name = "KeyboardInputPoller") {
+            val appState = appState
+            while (appState.active) {
+                readAndFire()
+            }
+        }
     }
 
-    private fun pollKeyboard(): Event? {
-        val keyStroke = screen.pollInput() ?: return null
+    private fun readAndFire() {
+        readKeyboard()?.let { fireEvent(it) }
+    }
+
+    private fun readKeyboard(): Event? {
+        val keyStroke = screen.readInput() ?: return null
         hackyMacBugFix.scheduleAfterTyping()
         val textToPaste = handlePasteAction(keyStroke)
         val character = keyStroke.realCharacter
@@ -31,11 +44,14 @@ class KeyboardInputPoller(private val screen: Screen) : AppComponent {
             keyStroke.keyType == KeyType.F1 -> Event.Keyboard.ShowHelp
             keyStroke.keyType == KeyType.ArrowDown ->
                 Event.Keyboard.ArrowButton(Event.Keyboard.ArrowButton.Direction.DOWN)
+
             keyStroke.keyType == KeyType.ArrowUp -> Event.Keyboard.ArrowButton(Event.Keyboard.ArrowButton.Direction.UP)
             keyStroke.keyType == KeyType.ArrowLeft ->
                 Event.Keyboard.ArrowButton(Event.Keyboard.ArrowButton.Direction.LEFT)
+
             keyStroke.keyType == KeyType.ArrowRight ->
                 Event.Keyboard.ArrowButton(Event.Keyboard.ArrowButton.Direction.RIGHT)
+
             keyStroke.keyType == KeyType.Delete -> Event.Keyboard.Delete
             keyStroke.keyType == KeyType.Backspace -> Event.Keyboard.Backspace
             keyStroke.keyType == KeyType.Enter -> Event.Keyboard.Enter

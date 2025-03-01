@@ -50,7 +50,7 @@ interface AppTest : KoinTest {
 
     @Suppress("TestFunctionName")
     fun Any?.P() {
-        queue.pollAndProcessAll()
+        queue.processAllNonBlocking()
     }
 
     fun initCells(vararg texts: String) {
@@ -86,6 +86,6 @@ interface AppTest : KoinTest {
             this.cursor.row = cursor!!.row
             this.cursor.column = cursor.column
         }
-        queue.pollAndProcessAll()
+        queue.processAllNonBlocking()
     }
 }
