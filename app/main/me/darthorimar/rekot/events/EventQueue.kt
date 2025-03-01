@@ -1,11 +1,17 @@
 package me.darthorimar.rekot.events
 
 import me.darthorimar.rekot.app.AppComponent
-import java.util.concurrent.ConcurrentLinkedQueue
+import me.darthorimar.rekot.app.AppState
+import org.koin.core.component.inject
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.getValue
 import kotlin.reflect.KClass
 
 class EventQueue : AppComponent {
-    private val queue = ConcurrentLinkedQueue<Event>()
+    private val queue = LinkedBlockingQueue<Event>()
+
+    private val appState: AppState by inject()
 
     val byEventListeners = mutableListOf<Pair<KClass<out Event>, EventListener<*>>>()
 
@@ -13,18 +19,30 @@ class EventQueue : AppComponent {
         queue.offer(event)
     }
 
-    fun pollAndProcessAll(): Boolean {
-        var event: Event?
-        var empty = true
-        do {
-            event = queue.poll() ?: break
-            empty = false
-            notifyListener(event)
-        } while (true)
-        return !empty
+    fun processAllBlocking() {
+        processFirstBlocking()
+        processAllNonBlocking()
     }
 
-    fun pollAndProcessSingle(): Event? {
+    fun processAllNonBlocking() {
+        do {
+            val event = queue.poll() ?: break
+            notifyListener(event)
+        } while (true)
+    }
+
+    fun processFirstBlocking(): Event? {
+        val appState = appState
+        while (appState.active) {
+            // timeout to listen for the app shutdown
+            val event = queue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS) ?: continue
+            notifyListener(event)
+            return event
+        }
+        return null
+    }
+
+    fun processFirstNonBlocking(): Event? {
         val event = queue.poll() ?: return null
         notifyListener(event)
         return event
@@ -42,5 +60,9 @@ class EventQueue : AppComponent {
 
     inline fun <reified E : Event> subscribe(listener: EventListener<E>) {
         byEventListeners.add(E::class to listener)
+    }
+
+    companion object {
+        private const val POLL_TIMEOUT = 100L
     }
 }
