@@ -30,6 +30,7 @@ internal object PersistentConfigFactory {
             config.javaHome?.let { javaHome -> setProperty(PersistentConfig::javaHome.name, javaHome) }
             setProperty(PersistentConfig::tabSize.name, config.tabSize.toString())
             setProperty(PersistentConfig::rgbColors.name, config.rgbColors.toString())
+            setProperty(PersistentConfig::hackyMacFix.name, config.hackyMacFix.toString())
         }
 
     private fun deserialize(properties: Properties): PersistentConfig =
@@ -38,5 +39,6 @@ internal object PersistentConfigFactory {
             properties.getProperty(PersistentConfig::javaHome.name),
             properties.getProperty(PersistentConfig::tabSize.name).toInt(),
             properties.getProperty(PersistentConfig::rgbColors.name).toBoolean(),
+            properties.getProperty(PersistentConfig::hackyMacFix.name)?.toBoolean() ?: false,
         )
 }

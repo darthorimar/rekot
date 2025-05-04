@@ -5,4 +5,5 @@ internal class PersistentConfig(
     val javaHome: String?,
     val tabSize: Int,
     val rgbColors: Boolean,
+    val hackyMacFix: Boolean,
 )

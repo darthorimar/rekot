@@ -42,7 +42,9 @@ object ConfigFactory {
             stdlibPath = stdlibPath,
             javaHome = javaHome,
             tabSize = tabSize,
-            colorSpace = if (persistentConfig.rgbColors) ColorSpace.RGB else ColorSpace.Xterm256)
+            colorSpace = if (persistentConfig.rgbColors) ColorSpace.RGB else ColorSpace.Xterm256,
+            hackyMacFix = persistentConfig.hackyMacFix,
+        )
     }
 
     private fun getJavaHome(): Path? {

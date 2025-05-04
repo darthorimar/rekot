@@ -12,6 +12,7 @@ class AppConfig(
     val javaHome: Path,
     val tabSize: Int,
     val colorSpace: ColorSpace,
+    val hackyMacFix: Boolean,
 ) {
     val completionPopupHeight = 10
     val completionPopupMinWidth = 30

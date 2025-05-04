@@ -26,6 +26,7 @@ internal object DefaultConfigFactory {
             javaHome = null,
             tabSize = tabSize,
             rgbColors = rgbColors,
+            hackyMacFix = false,
         )
     }
 

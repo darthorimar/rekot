@@ -20,6 +20,7 @@ object TestConfigFactory {
                 javaHome = Paths.get(System.getProperty("java.home")),
                 colorSpace = ColorSpace.RGB,
                 tabSize = 2,
+                hackyMacFix = false,
             )
             .also { it.init() }
     }
