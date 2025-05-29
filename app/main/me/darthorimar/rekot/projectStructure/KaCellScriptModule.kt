@@ -2,6 +2,7 @@ package me.darthorimar.rekot.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaScriptModule
 import org.jetbrains.kotlin.config.LanguageVersionSettings
@@ -37,4 +38,8 @@ class KaCellScriptModule(
 
     override val directFriendDependencies: List<KaModule>
         get() = emptyList()
+
+    @KaPlatformInterface
+    override val baseContentScope: GlobalSearchScope
+        get() = contentScope
 }
