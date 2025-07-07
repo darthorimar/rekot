@@ -195,6 +195,9 @@ class CellExecutor : AppComponent {
             CompilerConfiguration().apply {
                 put(CommonConfigurationKeys.LANGUAGE_VERSION_SETTINGS, LanguageVersionSettingsImpl.DEFAULT)
             }
-        compile(ktFile, config, KaCompilerTarget.Jvm(isTestMode = false), allowedErrorFilter = { false })
+        compile(ktFile, config, KaCompilerTarget.Jvm(isTestMode = false,
+            compiledClassHandler = null,
+            debuggerExtension = null
+        ), allowedErrorFilter = { false })
     }
 }

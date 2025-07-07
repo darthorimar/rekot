@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.2.0"
     application
     java
     id("com.ncorti.ktfmt.gradle") version "0.21.0"
@@ -16,12 +16,14 @@ plugins {
 repositories {
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
     maven("https://www.jetbrains.com/intellij-repository/releases")
+    maven("https://www.jetbrains.com/intellij-repository/snapshots")
+    maven("https://redirector.kotlinlang.org/maven/bootstrap")
     mavenCentral()
     mavenLocal()
 }
 
-val kotlinVersion = "2.1.255-SNAPSHOT"
-val intellijVersion = "233.13135.128"
+val kotlinVersion = "2.3.255-SNAPSHOT"
+val intellijVersion = "241.19416.19"
 
 dependencies {
     implementation(project(":config"))
@@ -31,23 +33,27 @@ dependencies {
     listOf(
             "com.jetbrains.intellij.platform:util-rt",
             "com.jetbrains.intellij.platform:util-class-loader",
-            "com.jetbrains.intellij.platform:util-text-matching",
             "com.jetbrains.intellij.platform:util",
             "com.jetbrains.intellij.platform:util-base",
             "com.jetbrains.intellij.platform:util-xml-dom",
             "com.jetbrains.intellij.platform:core",
             "com.jetbrains.intellij.platform:core-impl",
             "com.jetbrains.intellij.platform:extensions",
-            "com.jetbrains.intellij.platform:diagnostic",
             "com.jetbrains.intellij.java:java-frontback-psi",
             "com.jetbrains.intellij.java:java-frontback-psi-impl",
             "com.jetbrains.intellij.java:java-psi",
             "com.jetbrains.intellij.java:java-psi-impl",
+            "com.jetbrains.intellij.platform:diagnostic",
+            "com.jetbrains.intellij.platform:diagnostic-telemetry",
+            "com.jetbrains.intellij.platform:util-progress",
+            "com.jetbrains.intellij.platform:util-coroutines",
         )
         .forEach {
             implementation("$it:$intellijVersion") { isTransitive = false }
             implementation("$it:$intellijVersion:sources") { isTransitive = false }
         }
+
+    implementation("io.opentelemetry:opentelemetry-api:1.44.1")
 
     listOf(
             "org.jetbrains.kotlin:analysis-api-k2-for-ide",
@@ -67,6 +73,7 @@ dependencies {
             "org.jetbrains.kotlin:kotlin-scripting-compiler-impl",
             "org.jetbrains.kotlin:kotlin-script-runtime",
             "org.jetbrains.kotlin:kotlin-scripting-compiler",
+            "org.jetbrains.kotlin:assignment-compiler-plugin-for-ide",
         )
         .forEach {
             implementation("$it:$kotlinVersion") { isTransitive = false }
@@ -91,7 +98,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
     implementation("org.lz4:lz4-java:1.7.1") { isTransitive = false }
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.4") { isTransitive = false }
-    implementation("org.jetbrains.intellij.deps.fastutil:intellij-deps-fastutil:8.5.11-18") { isTransitive = false }
+    implementation("org.jetbrains.intellij.deps.fastutil:intellij-deps-fastutil:8.5.13-jb4") { isTransitive = false }
     implementation("org.jetbrains:annotations:24.1.0")
     implementation("org.apache.commons:commons-text:1.13.0")
 
@@ -116,6 +123,7 @@ kotlin {
         optIn.add("org.jetbrains.kotlin.analysis.api.KaImplementationDetail")
         optIn.add("org.jetbrains.kotlin.analysis.api.KaExperimentalApi")
         optIn.add("org.jetbrains.kotlin.analysis.api.KaIdeApi")
+        optIn.add("org.jetbrains.kotlin.analysis.api.KaContextParameterApi")
         optIn.add("kotlin.ExperimentalUnsignedTypes")
         optIn.add("kotlin.contracts.ExperimentalContracts")
         freeCompilerArgs.add("-Xcontext-receivers")

@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibraryModule
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaLibrarySourceModule
@@ -18,7 +19,7 @@ fun getVirtualFilesByRoots(
     roots: List<Path>,
     kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
 ): List<VirtualFile> =
-    StandaloneProjectFactory.getVirtualFilesForLibraryRoots(roots, kotlinCoreProjectEnvironment).distinct().flatMap {
+    StandaloneProjectFactory.getVirtualFilesForLibraryRoots(roots, kotlinCoreProjectEnvironment.environment).distinct().flatMap {
         LibraryUtils.getAllVirtualFilesFromRoot(it, includeRoot = true)
     }
 
@@ -50,6 +51,9 @@ class KaLibraryModuleImpl(
 
     override val directFriendDependencies: List<KaModule>
         get() = emptyList()
+
+    @KaPlatformInterface
+    override val baseContentScope: GlobalSearchScope get() = contentScope
 
     override val directRegularDependencies: List<KaModule>
         get() = emptyList()

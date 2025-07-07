@@ -1,18 +1,21 @@
 package me.darthorimar.rekot.projectStructure
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProvider
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProviderFactory
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderFactory
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 
-class BinariesDeclarationProviderFactory(project: Project, libraryBinaryFiles: List<VirtualFile>) :
-    KotlinDeclarationProviderFactory {
+class BinariesDeclarationProviderFactory(
+    kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
+    libraryBinaryFiles: List<VirtualFile>,
+) : KotlinDeclarationProviderFactory {
     private val delegate =
         KotlinStandaloneDeclarationProviderFactory(
-            project,
+            kotlinCoreProjectEnvironment.project,
+            kotlinCoreProjectEnvironment.environment,
             sourceKtFiles = emptyList(),
             binaryRoots = libraryBinaryFiles,
             shouldBuildStubsForBinaryLibraries = true,

@@ -18,7 +18,7 @@ class ProjectDeclarationFactoryImpl() : KotlinDeclarationProviderFactory, AppCom
 
     private val essentialLibrariesProviderFactory by lazy {
         BinariesDeclarationProviderFactory(
-            projectStructure.project,
+            projectStructure.kotlinCoreProjectEnvironment,
             projectStructure.essentialLibraries.allVirtualFiles,
         )
     }

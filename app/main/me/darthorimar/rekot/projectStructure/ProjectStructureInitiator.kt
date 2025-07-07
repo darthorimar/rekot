@@ -1,4 +1,3 @@
-@file:Suppress("UnstableApiUsage", "INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
 package me.darthorimar.rekot.projectStructure
 
@@ -13,8 +12,9 @@ import com.intellij.psi.SmartTypePointerManager
 import com.intellij.psi.compiled.ClassFileDecompilers
 import com.intellij.psi.impl.smartPointers.SmartPointerManagerImpl
 import com.intellij.psi.impl.smartPointers.SmartTypePointerManagerImpl
+import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.containers.ContainerUtil
 import me.darthorimar.rekot.config.AppConfig
-import org.jetbrains.kotlin.analysis.api.impl.base.permissions.KaBaseAnalysisPermissionRegistry
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.permissions.KaAnalysisPermissionRegistry
 import org.jetbrains.kotlin.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
@@ -26,20 +26,18 @@ import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclaration
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclarationProviderMerger
 import org.jetbrains.kotlin.analysis.api.platform.lifetime.KotlinAlwaysAccessibleLifetimeTokenFactory
 import org.jetbrains.kotlin.analysis.api.platform.lifetime.KotlinLifetimeTokenFactory
-import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinGlobalModificationService
 import org.jetbrains.kotlin.analysis.api.platform.modification.KotlinModificationTrackerFactory
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackagePartProviderFactory
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProviderFactory
 import org.jetbrains.kotlin.analysis.api.platform.permissions.KotlinAnalysisPermissionOptions
-import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinByModulesResolutionScopeProvider
+import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinCompilerPluginsProvider
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinModuleDependentsProvider
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinResolutionScopeProvider
+import org.jetbrains.kotlin.analysis.api.platform.resolution.KaResolutionActivityTracker
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.resolve.extensions.KaResolveExtensionProvider
-import org.jetbrains.kotlin.analysis.api.standalone.KotlinStaticPackagePartProviderFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneAnnotationsResolverFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderMerger
-import org.jetbrains.kotlin.analysis.api.standalone.base.modification.KotlinStandaloneGlobalModificationService
 import org.jetbrains.kotlin.analysis.api.standalone.base.modification.KotlinStandaloneModificationTrackerFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.packages.KotlinStandalonePackageProviderFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.permissions.KotlinStandaloneAnalysisPermissionOptions
@@ -48,13 +46,17 @@ import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.KtStat
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.StandaloneProjectFactory
 import org.jetbrains.kotlin.analysis.decompiler.psi.KotlinBuiltInDecompiler
 import org.jetbrains.kotlin.analysis.decompiler.psi.KotlinClassFileDecompiler
-import org.jetbrains.kotlin.analysis.low.level.api.fir.providers.LLSealedInheritorsProvider
+import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreApplicationEnvironmentMode
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
+import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
-import org.jetbrains.kotlin.fir.declarations.SealedClassInheritorsProvider
+import org.jetbrains.kotlin.extensions.ProjectExtensionDescriptor
+import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
+import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptLoweringExtension
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionProvider
+import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectory
 import kotlin.io.path.exists
@@ -105,7 +107,18 @@ object ProjectStructureInitiator {
             if (application.getServiceIfCreated(KaAnalysisPermissionRegistry::class.java) == null) {
                 applicationEnvironment.registerApplicationService(
                     KaAnalysisPermissionRegistry::class.java,
-                    @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") KaBaseAnalysisPermissionRegistry(),
+                     object : KaAnalysisPermissionRegistry {
+                         override var explicitAnalysisRestriction: KaAnalysisPermissionRegistry.KaExplicitAnalysisRestriction? = null
+                         override var isAnalysisAllowedOnEdt: Boolean = true
+                         override var isAnalysisAllowedInWriteAction: Boolean = true
+                     },
+                )
+            }
+
+            if (application.getServiceIfCreated(KaResolutionActivityTracker::class.java) == null) {
+                applicationEnvironment.registerApplicationService(
+                    KaResolutionActivityTracker::class.java,
+                    Class.forName("org.jetbrains.kotlin.analysis.low.level.api.fir.lazy.resolve.LLFirResolutionActivityTracker").newInstance() as KaResolutionActivityTracker,
                 )
             }
 
@@ -156,7 +169,7 @@ object ProjectStructureInitiator {
         return ProjectStructure(
             kotlinCoreProjectEnvironment,
             essentialLibraries,
-            Builtins(project),
+            Builtins(kotlinCoreProjectEnvironment),
             projectStructureProvider,
             projectDisposable,
         )
@@ -206,10 +219,6 @@ object ProjectStructureInitiator {
                 KotlinStandaloneModificationTrackerFactory::class.java,
             )
             registerService(
-                KotlinGlobalModificationService::class.java,
-                KotlinStandaloneGlobalModificationService::class.java,
-            )
-            registerService(
                 KotlinLifetimeTokenFactory::class.java,
                 KotlinAlwaysAccessibleLifetimeTokenFactory::class.java,
             )
@@ -217,10 +226,6 @@ object ProjectStructureInitiator {
             registerService(
                 KotlinAnnotationsResolverFactory::class.java,
                 KotlinStandaloneAnnotationsResolverFactory(project, emptyList()),
-            )
-            registerService(
-                KotlinResolutionScopeProvider::class.java,
-                KotlinByModulesResolutionScopeProvider::class.java,
             )
 
             registerService(KotlinDeclarationProviderFactory::class.java, declarationFactory)
@@ -238,10 +243,6 @@ object ProjectStructureInitiator {
                 KotlinStandalonePackageProviderFactory(project, emptyList()), /*TODO ???*/
             )
 
-            registerService(
-                SealedClassInheritorsProvider::class.java,
-                @Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER") LLSealedInheritorsProvider(project),
-            )
 
             registerService(
                 KotlinPackagePartProviderFactory::class.java,
@@ -249,17 +250,39 @@ object ProjectStructureInitiator {
                     StandaloneProjectFactory.createPackagePartsProvider(
                         StandaloneProjectFactory.getAllBinaryRoots(
                             essentialLibraries.kaModules,
-                            kotlinCoreProjectEnvironment,
+                            kotlinCoreProjectEnvironment.environment,
                         ))),
             )
 
-            StandaloneProjectFactory.initialiseVirtualFileFinderServices(
+
+            /*
+            private fun initialiseVirtualFileFinderServices(
+                environment: KotlinCoreProjectEnvironment,
+                modules: List<KaModule>,
+                sourceFiles: List<PsiFileSystemItem>,
+                languageVersionSettings: LanguageVersionSettings,
+                jdkHome: Path?,
+            )
+             */
+            StandaloneProjectFactory::class.java.getDeclaredMethod(
+                "initialiseVirtualFileFinderServices",
+                KotlinCoreProjectEnvironment::class.java,
+                List::class.java,
+                List::class.java,
+                LanguageVersionSettings::class.java,
+                Path::class.java
+            ).apply {
+                isAccessible = true
+            }.invoke(
+                StandaloneProjectFactory,
                 kotlinCoreProjectEnvironment,
                 essentialLibraries.kaModules,
-                emptyList(),
+                emptyList<Any>(),
                 LanguageVersionSettingsImpl.DEFAULT,
                 null,
             )
+
+            registerService(KotlinCompilerPluginsProvider::class.java, KotlinCompilerPluginsProviderImpl::class.java)
 
             registerService(
                 KotlinPlatformSettings::class.java,
@@ -268,6 +291,42 @@ object ProjectStructureInitiator {
                         get() = KotlinDeserializedDeclarationsOrigin.STUBS
                 },
             )
+        }
+    }
+}
+
+private class KotlinCompilerPluginsProviderImpl : KotlinCompilerPluginsProvider {
+    override fun <T : Any> getRegisteredExtensions(
+        module: KaModule,
+        extensionType: ProjectExtensionDescriptor<T>
+    ): List<T> {
+        return when (extensionType) {
+            IrGenerationExtension -> {
+                listOf(
+                    ScriptLoweringExtension(),
+                )
+            }
+
+            else -> emptyList()
+        } as List<T>
+    }
+
+    override fun isPluginOfTypeRegistered(
+        module: KaModule,
+        pluginType: KotlinCompilerPluginsProvider.CompilerPluginType
+    ): Boolean {
+        return pluginType == KotlinCompilerPluginsProvider.CompilerPluginType.ASSIGNMENT
+    }
+}
+
+private class KotlinStaticPackagePartProviderFactory(
+    private val packagePartProvider: (GlobalSearchScope) -> PackagePartProvider,
+) : KotlinPackagePartProviderFactory {
+    private val cache = ContainerUtil.createConcurrentSoftMap<GlobalSearchScope, PackagePartProvider>()
+
+    override fun createPackagePartProvider(scope: GlobalSearchScope): PackagePartProvider {
+        return cache.getOrPut(scope) {
+            packagePartProvider(scope)
         }
     }
 }

@@ -1,22 +1,23 @@
 package me.darthorimar.rekot.projectStructure
 
-import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.analysis.api.impl.base.projectStructure.KaBuiltinsModuleImpl
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderFactory
 import org.jetbrains.kotlin.analysis.decompiler.psi.BuiltinsVirtualFileProvider
+import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 
-class Builtins(project: Project) {
+class Builtins(kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment) {
     val symbolProvider =
         KotlinStandaloneDeclarationProviderFactory(
-            project,
+            kotlinCoreProjectEnvironment.project,
+            kotlinCoreProjectEnvironment.environment,
             sourceKtFiles = emptyList(),
             binaryRoots = emptyList(),
             shouldBuildStubsForBinaryLibraries = true,
             skipBuiltins = false,
         )
 
-    val kaModule = KaBuiltinsModuleImpl(JvmPlatforms.defaultJvmPlatform, project)
+    val kaModule = KaBuiltinsModuleImpl(JvmPlatforms.defaultJvmPlatform, kotlinCoreProjectEnvironment.project)
 
     init {
         BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles().forEach { it.kaModule = kaModule }

@@ -45,6 +45,7 @@ class CompiledCellStorage : AppComponent {
         val compiledCellProviderFactory =
             KotlinStandaloneDeclarationProviderFactory(
                 projectStructure.kotlinCoreProjectEnvironment.project,
+                projectStructure.kotlinCoreProjectEnvironment.environment,
                 sourceKtFiles = emptyList(),
                 binaryRoots = kaLibraryModule.virtualFiles,
                 shouldBuildStubsForBinaryLibraries = true,
