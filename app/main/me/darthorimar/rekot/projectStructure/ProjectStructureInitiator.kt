@@ -1,4 +1,3 @@
-
 package me.darthorimar.rekot.projectStructure
 
 import com.intellij.core.CoreApplicationEnvironment
@@ -15,6 +14,8 @@ import com.intellij.psi.impl.smartPointers.SmartTypePointerManagerImpl
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.containers.ContainerUtil
 import me.darthorimar.rekot.config.AppConfig
+import me.darthorimar.rekot.projectStructure.modules.KaJarLibraryModuleImpl
+import me.darthorimar.rekot.projectStructure.modules.KaJdkLibraryModuleImpl
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.permissions.KaAnalysisPermissionRegistry
 import org.jetbrains.kotlin.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
@@ -54,6 +55,7 @@ import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
 import org.jetbrains.kotlin.extensions.ProjectExtensionDescriptor
 import org.jetbrains.kotlin.load.kotlin.PackagePartProvider
+import org.jetbrains.kotlin.psi.stubs.elements.KtFileElementType
 import org.jetbrains.kotlin.scripting.compiler.plugin.extensions.ScriptLoweringExtension
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionProvider
 import java.nio.file.Path
@@ -88,6 +90,8 @@ object ProjectStructureInitiator {
 
         val project: MockProject = kotlinCoreProjectEnvironment.project
 
+        KtFileElementType.INSTANCE
+
         CoreApplicationEnvironment.registerExtensionPoint(
             project.extensionArea,
             KaResolveExtensionProvider.EP_NAME.name,
@@ -107,18 +111,20 @@ object ProjectStructureInitiator {
             if (application.getServiceIfCreated(KaAnalysisPermissionRegistry::class.java) == null) {
                 applicationEnvironment.registerApplicationService(
                     KaAnalysisPermissionRegistry::class.java,
-                     object : KaAnalysisPermissionRegistry {
-                         override var explicitAnalysisRestriction: KaAnalysisPermissionRegistry.KaExplicitAnalysisRestriction? = null
-                         override var isAnalysisAllowedOnEdt: Boolean = true
-                         override var isAnalysisAllowedInWriteAction: Boolean = true
-                     },
+                    object : KaAnalysisPermissionRegistry {
+                        override var explicitAnalysisRestriction: KaAnalysisPermissionRegistry.KaExplicitAnalysisRestriction? =
+                            null
+                        override var isAnalysisAllowedOnEdt: Boolean = true
+                        override var isAnalysisAllowedInWriteAction: Boolean = true
+                    },
                 )
             }
 
             if (application.getServiceIfCreated(KaResolutionActivityTracker::class.java) == null) {
                 applicationEnvironment.registerApplicationService(
                     KaResolutionActivityTracker::class.java,
-                    Class.forName("org.jetbrains.kotlin.analysis.low.level.api.fir.lazy.resolve.LLFirResolutionActivityTracker").newInstance() as KaResolutionActivityTracker,
+                    Class.forName("org.jetbrains.kotlin.analysis.low.level.api.fir.lazy.resolve.LLFirResolutionActivityTracker")
+                        .newInstance() as KaResolutionActivityTracker,
                 )
             }
 
@@ -141,9 +147,7 @@ object ProjectStructureInitiator {
         val projectStructureProvider = ProjectStructureProviderImpl()
 
         for (library in essentialLibraries.allLibraries) {
-            for (file in library.files) {
-                projectStructureProvider.setModule(file, library.kaModule)
-            }
+            projectStructureProvider.registerLibraryModule(library.kaModule)
         }
         KotlinCoreEnvironment.registerProjectExtensionPoints(project.extensionArea)
 
@@ -180,23 +184,22 @@ object ProjectStructureInitiator {
         appConfig: AppConfig,
     ): ProjectEssentialLibraries =
         ProjectEssentialLibraries(
-            stdlib =
-                EssentialLibrary.create(
-                    listOf(appConfig.stdlibPath),
-                    kotlinCoreProjectEnvironment,
-                    "stdlib",
-                    isSdk = false,
-                ),
-            jdk =
-                EssentialLibrary.create(
+            stdlib = Library.create(
+                listOf(appConfig.stdlibPath),
+                kotlinCoreProjectEnvironment,
+                "stdlib",
+            ),
+            jdk = Library(
+                KaJdkLibraryModuleImpl(
+                    appConfig.javaHome,
                     buildList {
                         addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = true))
                         addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = false))
-                    },
-                    kotlinCoreProjectEnvironment,
+                    }.distinct(),
                     "JDK",
-                    isSdk = true,
-                ),
+                    kotlinCoreProjectEnvironment.project
+                )
+            ),
         )
 
     private fun registerProjectServices(
@@ -251,7 +254,9 @@ object ProjectStructureInitiator {
                         StandaloneProjectFactory.getAllBinaryRoots(
                             essentialLibraries.kaModules,
                             kotlinCoreProjectEnvironment.environment,
-                        ))),
+                        )
+                    )
+                ),
             )
 
 

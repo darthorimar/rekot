@@ -10,7 +10,7 @@ import me.darthorimar.rekot.events.Event
 import me.darthorimar.rekot.execution.CellExecutionState
 import me.darthorimar.rekot.execution.ExecutionResult
 import me.darthorimar.rekot.projectStructure.ProjectStructure
-import me.darthorimar.rekot.projectStructure.createLibraryModule
+import me.darthorimar.rekot.projectStructure.createGeneralLibraryModule
 import me.darthorimar.rekot.psi.CellPsiUtils
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderFactory
 import org.jetbrains.kotlin.psi.KtClassLikeDeclaration
@@ -32,11 +32,10 @@ class CompiledCellStorage : AppComponent {
 
     private fun updaterCompiledAnalyzableCell(cellId: CellId, executedCell: ExecutionResult) {
         val kaLibraryModule =
-            createLibraryModule(
+            createGeneralLibraryModule(
                 listOf(executedCell.classRoot),
                 projectStructure.kotlinCoreProjectEnvironment,
                 "CompiledCell#${cellId}, $executedCell",
-                isSdk = false,
             )
         for (virtualFile in kaLibraryModule.virtualFiles) {
             projectStructure.projectStructureProvider.setModule(virtualFile, kaLibraryModule)

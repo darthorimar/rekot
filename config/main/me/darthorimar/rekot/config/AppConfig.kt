@@ -3,10 +3,13 @@ package me.darthorimar.rekot.config
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
+import kotlin.io.path.createDirectory
+import kotlin.io.path.div
 
 class AppConfig(
     val appDir: Path,
     val logsDir: Path,
+    val indexDir: Path,
     val tmpDir: Path,
     val stdlibPath: Path,
     val javaHome: Path,

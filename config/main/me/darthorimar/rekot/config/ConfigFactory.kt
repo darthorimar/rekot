@@ -8,6 +8,7 @@ import kotlin.io.path.div
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import me.darthorimar.rekot.config.persistent.PersistentConfigFactory
+import kotlin.io.path.createDirectory
 
 object ConfigFactory {
     fun createConfig(): AppConfig {
@@ -34,9 +35,13 @@ object ConfigFactory {
 
         val logsDir = (appDir / "logs").createDirectories()
         val tmpDir = Files.createTempDirectory(APP_NAME_LOWERCASE)
+        val indexDir = (appDir / "indexes").createDirectories().apply {
+            resolve("data").createDirectories()
+        }
         val tabSize = persistentConfig.tabSize
         return AppConfig(
             appDir = appDir,
+            indexDir = indexDir,
             logsDir = logsDir,
             tmpDir = tmpDir,
             stdlibPath = stdlibPath,
