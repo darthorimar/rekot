@@ -16,6 +16,7 @@ import com.intellij.util.containers.ContainerUtil
 import me.darthorimar.rekot.config.AppConfig
 import me.darthorimar.rekot.projectStructure.modules.KaJarLibraryModuleImpl
 import me.darthorimar.rekot.projectStructure.modules.KaJdkLibraryModuleImpl
+import me.darthorimar.rekot.projectStructure.modules.KaRekotLibraryModule
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.permissions.KaAnalysisPermissionRegistry
 import org.jetbrains.kotlin.analysis.api.platform.KotlinDeserializedDeclarationsOrigin
@@ -146,8 +147,8 @@ object ProjectStructureInitiator {
 
         val projectStructureProvider = ProjectStructureProviderImpl()
 
-        for (library in essentialLibraries.allLibraries) {
-            projectStructureProvider.registerLibraryModule(library.kaModule)
+        for (library in essentialLibraries) {
+            projectStructureProvider.registerLibraryModule(library)
         }
         KotlinCoreEnvironment.registerProjectExtensionPoints(project.extensionArea)
 
@@ -182,29 +183,32 @@ object ProjectStructureInitiator {
     private fun createEssentialLibraries(
         kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
         appConfig: AppConfig,
-    ): ProjectEssentialLibraries =
-        ProjectEssentialLibraries(
-            stdlib = Library.create(
-                listOf(appConfig.stdlibPath),
-                kotlinCoreProjectEnvironment,
-                "stdlib",
-            ),
-            jdk = Library(
-                KaJdkLibraryModuleImpl(
-                    appConfig.javaHome,
-                    buildList {
-                        addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = true))
-                        addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = false))
-                    }.distinct(),
-                    "JDK",
-                    kotlinCoreProjectEnvironment.project
-                )
-            ),
+    ): List<KaRekotLibraryModule> = buildList {
+        add(
+            KaJarLibraryModuleImpl(
+                binaryRoots = listOf(appConfig.stdlibPath),
+                libraryName = "stdlib",
+                project = kotlinCoreProjectEnvironment.project,
+            )
         )
+        add(
+            KaJdkLibraryModuleImpl(
+                appConfig.javaHome,
+                buildList {
+                    addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = true))
+                    if (isEmpty()) {
+                        addAll(LibraryUtils.findClassesFromJdkHome(appConfig.javaHome, isJre = false))
+                    }
+                }.distinct(),
+                "JDK",
+                kotlinCoreProjectEnvironment.project,
+            )
+        )
+    }
 
     private fun registerProjectServices(
         kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
-        essentialLibraries: ProjectEssentialLibraries,
+        libraries: List<KaRekotLibraryModule>,
         declarationFactory: ProjectDeclarationFactoryImpl,
     ) {
         val project = kotlinCoreProjectEnvironment.project
@@ -252,7 +256,7 @@ object ProjectStructureInitiator {
                 KotlinStaticPackagePartProviderFactory(
                     StandaloneProjectFactory.createPackagePartsProvider(
                         StandaloneProjectFactory.getAllBinaryRoots(
-                            essentialLibraries.kaModules,
+                            libraries,
                             kotlinCoreProjectEnvironment.environment,
                         )
                     )
@@ -281,7 +285,7 @@ object ProjectStructureInitiator {
             }.invoke(
                 StandaloneProjectFactory,
                 kotlinCoreProjectEnvironment,
-                essentialLibraries.kaModules,
+                libraries,
                 emptyList<Any>(),
                 LanguageVersionSettingsImpl.DEFAULT,
                 null,

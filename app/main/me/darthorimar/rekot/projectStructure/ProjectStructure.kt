@@ -4,11 +4,12 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import me.darthorimar.rekot.app.AppComponent
+import me.darthorimar.rekot.projectStructure.modules.KaRekotLibraryModule
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 
 class ProjectStructure(
     val kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
-    val essentialLibraries: ProjectEssentialLibraries,
+    val libraries: List<KaRekotLibraryModule>,
     val builtins: Builtins,
     val projectStructureProvider: ProjectStructureProviderImpl,
     private val projectDisposable: Disposable,

@@ -64,7 +64,7 @@ class CellAnalyzer : AppComponent {
     private fun createKaCellScriptModule(ktFile: KtFile, resultVariableIndex: Int?): KaCellScriptModule {
         val allCompiledCells = compiledCellStorage.allCompiledCells()
         val binaryDependencies = buildList {
-            addAll(projectStructure.essentialLibraries.kaModules)
+            addAll(projectStructure.libraries)
             allCompiledCells.mapTo(this) { it.compiledLibraryModule }
             add(projectStructure.builtins.kaModule)
         }

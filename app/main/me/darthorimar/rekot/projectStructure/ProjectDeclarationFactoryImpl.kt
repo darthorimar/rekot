@@ -1,7 +1,6 @@
 package me.darthorimar.rekot.projectStructure
 
 import com.intellij.psi.search.GlobalSearchScope
-import java.util.concurrent.CompletableFuture
 import me.darthorimar.rekot.analysis.CellAnalyzer
 import me.darthorimar.rekot.analysis.CompiledCellStorage
 import me.darthorimar.rekot.app.AppComponent
@@ -14,6 +13,7 @@ import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinDeclaration
 import org.jetbrains.kotlin.analysis.api.platform.declarations.KotlinFileBasedDeclarationProvider
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.koin.core.component.inject
+import java.util.concurrent.CompletableFuture
 
 class ProjectDeclarationFactoryImpl() : KotlinDeclarationProviderFactory, AppComponent {
     private val cellAnalyzer: CellAnalyzer by inject()
@@ -23,7 +23,7 @@ class ProjectDeclarationFactoryImpl() : KotlinDeclarationProviderFactory, AppCom
 
     private val _factoryFuture =
         CompletableFuture.supplyAsync {
-            val kaModules = projectStructure.essentialLibraries.kaModules
+            val kaModules = projectStructure.libraries
             val binaryRootsToIndex =
                 kaModules.filterIsInstance<KaJarLibraryModuleImpl>().flatMapTo(mutableSetOf()) { it.binaryRoots }
             val indexFutures =
