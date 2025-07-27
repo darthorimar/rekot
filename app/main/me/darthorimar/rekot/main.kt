@@ -27,7 +27,7 @@ import me.darthorimar.rekot.logging.*
 
 fun main(args: Array<String>) {
     when (val command = ArgsCommandsParser.parse(args)) {
-        ArgsCommand.RUN_APP -> {
+        ArgsCommand.RunApp -> {
             runApp()
         }
         is ArgsCommand.Secondary -> {

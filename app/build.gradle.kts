@@ -29,7 +29,7 @@ dependencies {
     implementation(project(":config"))
     implementation("com.googlecode.lanterna:lanterna:3.1.3")
     implementation("io.insert-koin:koin-core:4.0.0")
-
+    implementation("com.github.ajalt.clikt:clikt:5.0.3")
     implementation("com.esotericsoftware:kryo:5.6.2")
 
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")

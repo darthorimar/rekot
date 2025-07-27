@@ -1,27 +1,41 @@
 package me.darthorimar.rekot.args
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.PrintHelpMessage
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parsers.CommandLineParser
 import me.darthorimar.rekot.config.APP_NAME
 
-object ArgsCommandsParser {
-    fun parse(args: Array<String>): ArgsCommand {
-        return when (args.size) {
-            0 -> ArgsCommand.RUN_APP
-            1 -> when (val arg = args.single()) {
-                "--version", "-version", "version" -> ArgsCommand.Secondary.VERSION
-                "--help", "-help", "help" -> ArgsCommand.Secondary.HELP
-                "--app-dir" -> ArgsCommand.Secondary.PRINT_CONFIG
-                else -> error("Unknown arguments `$arg`, use `--help` for supported commands")
-            }
-            else -> error("Too many arguments, use `--help` for supported commands")
+private class RekotCommand() : CliktCommand(APP_NAME) {
+    val version by option("--version", "-version", help = "Print $APP_NAME version").flag()
+    val appDir by option("--app-dir", help = "Print directory with the $APP_NAME configuration").flag()
+        .validate {
+            if (it && version) fail("Cannot use --app-dir and --version together")
+        }
+
+    fun createCommand(): ArgsCommand {
+        return when {
+            version -> ArgsCommand.Secondary.Version
+            appDir -> ArgsCommand.Secondary.AppDir
+            else -> ArgsCommand.RunApp
         }
     }
 
-    fun help(): String {
-        return """
-            | --version - print $APP_NAME version
-            | --app-dir - print directory with the $APP_NAME configuration
-            | --help    - print this message
-        """.trimMargin()
-    }
+    override fun run() {}
 }
 
+object ArgsCommandsParser {
+    fun parse(args: Array<String>): ArgsCommand {
+        val command = RekotCommand()
+
+        var result: ArgsCommand? = null
+        try {
+            CommandLineParser.parseAndRun(command, args.toList()) { result = (it as RekotCommand).createCommand() }
+        } catch (e: PrintHelpMessage) {
+            return ArgsCommand.Secondary.Help(e.context?.command?.getFormattedHelp() ?: "Help not available")
+        }
+        return result ?: error("Cannot parse command from args: ${args.joinToString(" ")}")
+    }
+}

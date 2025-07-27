@@ -1,14 +1,13 @@
 package me.darthorimar.rekot.args
 
-@Suppress("ClassName")
 sealed interface ArgsCommand {
     sealed interface Secondary : ArgsCommand {
-        data object VERSION : Secondary
+        data object Version : Secondary
 
-        data object PRINT_CONFIG : Secondary
+        data object AppDir : Secondary
 
-        data object HELP : Secondary
+        data class Help(val help: String) : Secondary
     }
 
-    data object RUN_APP : ArgsCommand
+    data object RunApp : ArgsCommand
 }
