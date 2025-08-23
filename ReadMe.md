@@ -9,7 +9,14 @@
 
 ## ⚙️ Installation
 
-_Make sure you have the JDK installed_
+### Homebrew (macOS)
+
+```bash
+brew install darthorimar/tap/rekot
+```
+
+### Manual Installation (macOS/Linux)
+_Make sure you have the JDK installed. JDK 17 is recommended._
 
 Paste this into the terminal:
 
