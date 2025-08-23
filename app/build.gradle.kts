@@ -110,7 +110,7 @@ dependencies {
 
 tasks.shadowJar {
     archiveBaseName.set("rekot")
-    archiveVersion.set("0.1.3")
+    archiveVersion.set("0.1.4")
     archiveClassifier.set("")
     isZip64 = true
 }
