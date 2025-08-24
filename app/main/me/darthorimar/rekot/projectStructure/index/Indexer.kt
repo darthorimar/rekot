@@ -15,6 +15,7 @@ class Indexer : AppComponent {
         val factory =
             KotlinStandaloneDeclarationProviderFactory(
                 kotlinCoreProjectEnvironment.project,
+                kotlinCoreProjectEnvironment.environment,
                 sourceKtFiles = emptyList(),
                 binaryRoots = files,
                 shouldBuildStubsForBinaryLibraries = true,

@@ -14,6 +14,9 @@ import me.darthorimar.rekot.logging.logger
 import me.darthorimar.rekot.util.withTimeLogging
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreProjectEnvironment
 import org.koin.core.component.inject
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.io.path.name
 
 @Suppress(
@@ -26,32 +29,36 @@ class IndexFactory : AppComponent {
     private val serializer: IndexSerializer by inject()
     private val indexer: Indexer by inject()
 
-    fun index(root: Path, kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment): DeclarationIndex {
-        return withIndexFile(root) { indexFile ->
-            if (indexFile.exists()) {
-                logger.info("Using existing index for `$root` at `${indexFile.absolutePathString()}`")
-                val indexStamp = serializer.deserializeStamp(indexFile)
-                if (!indexStamp.isUpToDate(root)) {
-                    logger.info("Index for `$root` is outdated, reindexing...")
-                    indexFile.deleteIfExists()
+    private var lock = ReentrantLock()
+
+    fun index(root: Path, kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment): Index {
+        lock.withLock {  
+            return withIndexFile(root) { indexFile ->
+                if (indexFile.exists()) {
+                    logger.info("Using existing index for `$root` at `${indexFile.absolutePathString()}`")
+                    val indexStamp = serializer.deserializeStamp(indexFile)
+                    if (!indexStamp.isUpToDate(root)) {
+                        logger.info("Index for `$root` is outdated, reindexing...")
+                        indexFile.deleteIfExists()
+                        doIndex(
+                            root = root,
+                            indexFile = indexFile,
+                            kotlinCoreProjectEnvironment = kotlinCoreProjectEnvironment,
+                        )
+                    } else {
+                        logger.info("Index for `$root` is up to date, using existing index.")
+                        withTimeLogging("Deserializing index for `$root`") {
+                            serializer.deserialize(indexFile, kotlinCoreProjectEnvironment)
+                        }
+                    }
+                } else {
+                    logger.info("No existing index for `$root`, creating new index at `${indexFile.absolutePathString()}`")
                     doIndex(
                         root = root,
                         indexFile = indexFile,
                         kotlinCoreProjectEnvironment = kotlinCoreProjectEnvironment,
                     )
-                } else {
-                    logger.info("Index for `$root` is up to date, using existing index.")
-                    withTimeLogging("Deserializing index for `$root`") {
-                        serializer.deserialize(indexFile, kotlinCoreProjectEnvironment).declarationIndex
-                    }
                 }
-            } else {
-                logger.info("No existing index for `$root`, creating new index at `${indexFile.absolutePathString()}`")
-                doIndex(
-                    root = root,
-                    indexFile = indexFile,
-                    kotlinCoreProjectEnvironment = kotlinCoreProjectEnvironment,
-                )
             }
         }
     }
@@ -60,12 +67,12 @@ class IndexFactory : AppComponent {
         root: Path,
         indexFile: Path,
         kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment
-    ): DeclarationIndex {
+    ): Index {
         logger.info("Indexing for `$root` at `${indexFile.absolutePathString()}`")
         return withTimeLogging("Indexing for `$root`") {
             val index = indexer.index(root, kotlinCoreProjectEnvironment)
             serializer.serialize(index, indexFile)
-            index.declarationIndex
+            index
         }
     }
 
@@ -139,9 +146,13 @@ class IndexFactory : AppComponent {
         }
     }
 
+
     private fun createConnection(): Connection {
         val db = config.indexDir / "index.db"
-        val c = DriverManager.getConnection("jdbc:sqlite:${db.absolutePathString()}")
+        val c = DriverManager.getConnection("jdbc:sqlite:${db.absolutePathString()}?busy_timeout=5000")
+        c.createStatement().use { stmt ->
+            stmt.execute("PRAGMA journal_mode=WAL;");
+        }
         c.autoCommit = false
         c.createStatement().use { stmt ->
             stmt.executeUpdate(

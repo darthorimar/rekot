@@ -33,10 +33,11 @@ private class KaJarLibraryModuleImplScope private constructor(val roots: Set<Str
     }
 
     override fun contains(file: VirtualFile): Boolean {
-        var current: VirtualFile? = file
-        while (current != null) {
-            if (current.path in roots) return true
-            current = current.parent
+        val filePath = file.path
+        for (root in roots) {
+            if (filePath.startsWith(root)) {
+                return true
+            }
         }
         return false
     }

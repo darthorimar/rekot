@@ -6,7 +6,7 @@ buildscript {
 }
 
 plugins {
-    kotlin("jvm") version "2.2.0"
+    kotlin("jvm") version "2.2.20-RC"
     application
     java
     id("com.ncorti.ktfmt.gradle") version "0.21.0"
@@ -34,6 +34,12 @@ dependencies {
 
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")
 
+    implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.24")
+    implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.24")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.24")
+    implementation("org.apache.maven.resolver:maven-resolver-util:1.9.24")
+    implementation("org.apache.maven.resolver:maven-resolver-api:1.9.24")
+    implementation("org.apache.maven.resolver:maven-resolver-supplier:1.9.24")
     listOf(
             "com.jetbrains.intellij.platform:util-rt",
             "com.jetbrains.intellij.platform:util-class-loader",

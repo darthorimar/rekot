@@ -23,12 +23,19 @@ import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.system.exitProcess
 import me.darthorimar.rekot.logging.*
+import me.darthorimar.rekot.maven.MavenArtifactsResolver
+import java.nio.file.Path
 
 
 fun main(args: Array<String>) {
     when (val command = ArgsCommandsParser.parse(args)) {
-        ArgsCommand.RunApp -> {
-            runApp()
+        is ArgsCommand.RunApp -> {
+            val allLibraryPaths = buildSet {
+                addAll(command.libraryPaths)
+                addAll(MavenArtifactsResolver.resolveMavenArtifacts(command.libraryArtifacts + "org.jetbrains.kotlin:kotlin-stdlib:2.2.0"))
+            }.toList()
+
+            runApp(allLibraryPaths)
         }
         is ArgsCommand.Secondary -> {
             ArgsSecondaryCommandExecutor.execute(command)
@@ -36,8 +43,8 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun runApp() {
-    val config = ConfigFactory.createConfig()
+private fun runApp(libraries: List<Path>) {
+    val config = ConfigFactory.createConfig(libraries)
     config.init()
 
     val appConfigModule = module { single<AppConfig> { config } }

@@ -10,6 +10,8 @@ import me.darthorimar.rekot.cells.Cell
 import me.darthorimar.rekot.cells.CellId
 import me.darthorimar.rekot.config.AppConfig
 import me.darthorimar.rekot.events.Event
+import me.darthorimar.rekot.logging.error
+import me.darthorimar.rekot.logging.logger
 import org.jetbrains.kotlin.analysis.api.components.KaCompilationResult
 import org.jetbrains.kotlin.analysis.api.components.KaCompilerTarget
 import org.jetbrains.kotlin.analysis.api.components.isClassFile
@@ -38,7 +40,7 @@ class CellExecutor : AppComponent {
     private var resIndex = 1
     private var executionNumber = 0
 
-    private val classLoader = CellsClassLoader(URLClassLoader(arrayOf(appConfig.stdlibPath.toUri().toURL())))
+    private val classLoader = CellsClassLoader(appConfig.libraries)
 
     context(SubscriptionContext)
     override fun performSubscriptions() {
@@ -148,8 +150,10 @@ class CellExecutor : AppComponent {
                         is ThreadDeath -> "Execution interrupted"
                         else -> e.cause?.message ?: e.message ?: "Execution error"
                     }
+                logger.error("Error during cell execution", e)
                 fireEvent(Event.CellExecutionStateChanged(cell.id, CellExecutionState.Error(error)))
             } catch (e: Exception) {
+                logger.error("Error during cell execution", e)
                 fireEvent(
                     Event.CellExecutionStateChanged(cell.id, CellExecutionState.Error(e.message ?: "Execution error")))
             }
@@ -201,3 +205,5 @@ class CellExecutor : AppComponent {
         ), allowedErrorFilter = { false })
     }
 }
+
+private val logger = logger<CellExecutor>()

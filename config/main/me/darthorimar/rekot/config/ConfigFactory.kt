@@ -8,10 +8,9 @@ import kotlin.io.path.div
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
 import me.darthorimar.rekot.config.persistent.PersistentConfigFactory
-import kotlin.io.path.createDirectory
 
 object ConfigFactory {
-    fun createConfig(): AppConfig {
+    fun createConfig(libraries: List<Path>): AppConfig {
         val appDir = getDefaultAppDirectory().createDirectories()
         val persistentConfig = PersistentConfigFactory.readOrCreateDefault(appDir)
         val javaHome =
@@ -44,11 +43,11 @@ object ConfigFactory {
             indexDir = indexDir,
             logsDir = logsDir,
             tmpDir = tmpDir,
-            stdlibPath = stdlibPath,
             javaHome = javaHome,
             tabSize = tabSize,
             colorSpace = if (persistentConfig.rgbColors) ColorSpace.RGB else ColorSpace.Xterm256,
             hackyMacFix = persistentConfig.hackyMacFix,
+            libraries = libraries,
         )
     }
 

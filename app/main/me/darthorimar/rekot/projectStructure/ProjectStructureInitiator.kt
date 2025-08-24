@@ -46,6 +46,8 @@ import org.jetbrains.kotlin.analysis.api.standalone.base.permissions.KotlinStand
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.FirStandaloneServiceRegistrar
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.KtStaticModuleDependentsProvider
 import org.jetbrains.kotlin.analysis.api.standalone.base.projectStructure.StandaloneProjectFactory
+import org.jetbrains.kotlin.analysis.decompiler.konan.K2KotlinNativeMetadataDecompiler
+import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
 import org.jetbrains.kotlin.analysis.decompiler.psi.KotlinBuiltInDecompiler
 import org.jetbrains.kotlin.analysis.decompiler.psi.KotlinClassFileDecompiler
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
@@ -63,6 +65,7 @@ import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectory
 import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 
 // this class is a singleton as it initiates Application which is static itself
 object ProjectStructureInitiator {
@@ -91,13 +94,14 @@ object ProjectStructureInitiator {
 
         val project: MockProject = kotlinCoreProjectEnvironment.project
 
-        KtFileElementType.INSTANCE
+        KtFileElementType
 
         CoreApplicationEnvironment.registerExtensionPoint(
             project.extensionArea,
             KaResolveExtensionProvider.EP_NAME.name,
             KaResolveExtensionProvider::class.java,
         )
+
 
         KotlinCoreEnvironment.underApplicationLock {
             val applicationEnvironment = kotlinCoreProjectEnvironment.environment
@@ -140,7 +144,13 @@ object ProjectStructureInitiator {
                     LoadingOrder.FIRST,
                     applicationEnvironment.parentDisposable,
                 )
+                registerExtension(
+                    K2KotlinNativeMetadataDecompiler(),
+                    LoadingOrder.FIRST,
+                    applicationEnvironment.parentDisposable,
+                )
             }
+            applicationEnvironment.registerFileType(KlibMetaFileType, "knm")
         }
 
         val essentialLibraries = createEssentialLibraries(kotlinCoreProjectEnvironment, appConfig)
@@ -184,13 +194,13 @@ object ProjectStructureInitiator {
         kotlinCoreProjectEnvironment: KotlinCoreProjectEnvironment,
         appConfig: AppConfig,
     ): List<KaRekotLibraryModule> = buildList {
-        add(
-            KaJarLibraryModuleImpl(
-                binaryRoots = listOf(appConfig.stdlibPath),
-                libraryName = "stdlib",
-                project = kotlinCoreProjectEnvironment.project,
-            )
-        )
+//        add(
+//            KaJarLibraryModuleImpl(
+//                binaryRoots = listOf(appConfig.stdlibPath),
+//                libraryName = "stdlib",
+//                project = kotlinCoreProjectEnvironment.project,
+//            )
+//        )
         add(
             KaJdkLibraryModuleImpl(
                 appConfig.javaHome,
@@ -204,6 +214,15 @@ object ProjectStructureInitiator {
                 kotlinCoreProjectEnvironment.project,
             )
         )
+        for (root in appConfig.libraries) {
+            add(
+                KaJarLibraryModuleImpl(
+                    listOf(root),
+                    libraryName = root.nameWithoutExtension,
+                    kotlinCoreProjectEnvironment.project,
+                )
+            )
+        }
     }
 
     private fun registerProjectServices(
@@ -247,7 +266,7 @@ object ProjectStructureInitiator {
             )
             registerService(
                 KotlinPackageProviderFactory::class.java,
-                KotlinStandalonePackageProviderFactory(project, emptyList()), /*TODO ???*/
+                RekotPackageProviderFactory(project)
             )
 
 
